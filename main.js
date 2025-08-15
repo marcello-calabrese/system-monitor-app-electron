@@ -11,6 +11,7 @@ function createWindow() {
     width: 1240,
     height: 800,
     frame: false, // Remove the default title bar
+    icon: path.join(__dirname, 'icons', 'icon.ico'), // Custom app icon
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'), // For secure API exposure
       contextIsolation: true, // Recommended for security

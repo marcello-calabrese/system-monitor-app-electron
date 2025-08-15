@@ -32,10 +32,12 @@
       "preload.js",
       "renderer.js",
       "index.html",
-      "package.json"
+      "package.json",
+      "icons/**/*"
     ],
     "compression": "maximum",
     "win": {
+      "icon": "icons/icon.ico",
       "target": [
         {
           "target": "nsis",
