@@ -1,0 +1,67 @@
+{
+  "name": "system-monitor-app",
+  "version": "1.0.0",
+  "description": "Lightweight System Monitor for Windows",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "dist": "electron-builder --publish=never"
+  },
+  "keywords": [
+    "system",
+    "monitor",
+    "performance",
+    "windows"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^37.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.systemmonitor.app",
+    "productName": "System Monitor",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "package.json"
+    ],
+    "compression": "maximum",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "allowElevation": false,
+      "differentialPackage": false
+    },
+    "asar": {
+      "smartUnpack": false
+    },
+    "asarUnpack": [],
+    "electronLanguages": [
+      "en"
+    ],
+    "removePackageScripts": true,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false
+  }
+}
