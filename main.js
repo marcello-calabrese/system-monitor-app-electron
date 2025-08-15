@@ -93,8 +93,12 @@ function getCpuUsage() {
 
 // Function to get system temperature (Windows specific approach)
 function getSystemTemperature(cpuUsage) {
-  // Simplified temperature estimation
-  return Math.round(35 + (cpuUsage * 0.4));
+  // For real temperature, you'd need additional libraries like 'systeminformation'
+  // For now, we'll simulate based on CPU usage with more realistic values
+  const baseTemp = 35; // Base temperature
+  const tempVariation = cpuUsage * 0.4; // Temperature increases with CPU usage
+  const randomVariation = (Math.random() - 0.5) * 4; // Small random variation
+  return Math.round(baseTemp + tempVariation + randomVariation);
 }
 
 // Function to get network information (optimized)
@@ -226,73 +230,53 @@ function getDiskUsage() {
   };
 }
 
-// Cache for expensive operations
-let systemInfoCache = {
-  gpuInfo: null,
-  networkInfo: null,
-  lastUpdate: 0
-};
-
-const CACHE_DURATION = 5000; // 5 seconds cache for expensive operations
-
 // IPC handler: Renderer asks for system data, main responds
 ipcMain.handle('get-system-info', async () => {
   const cpus = os.cpus();
   const totalMemory = os.totalmem();
   const freeMemory = os.freemem();
   const usedMemory = totalMemory - freeMemory;
+  const network = os.networkInterfaces();
   const currentCpuUsage = getCpuUsage();
-  const now = Date.now();
   
-  // Use cached data for expensive operations if recent
-  let gpuInfo, networkInfo;
+  // Get GPU information
+  const gpuInfo = await getGPUInfo();
   
-  if (systemInfoCache.lastUpdate && (now - systemInfoCache.lastUpdate) < CACHE_DURATION) {
-    gpuInfo = systemInfoCache.gpuInfo;
-    networkInfo = systemInfoCache.networkInfo;
-  } else {
-    // Refresh expensive operations
-    gpuInfo = await getGPUInfo();
-    networkInfo = await getNetworkInfo();
-    
-    // Update cache
-    systemInfoCache = {
-      gpuInfo,
-      networkInfo,
-      lastUpdate: now
-    };
-  }
+  // Get real network information
+  const networkInfo = await getNetworkInfo();
   
-  // Get storage info (less expensive, can call each time)
-  const storageInfo = getDiskUsage();
+  // Get primary network interface
+  const networkInterfaces = Object.values(network).flat().filter(iface => 
+    iface.family === 'IPv4' && !iface.internal
+  );
   
   return {
-    // CPU Information (real-time)
+    // CPU Information
     cpuUsage: currentCpuUsage,
     cpuModel: cpus[0] ? cpus[0].model.trim() : 'Unknown CPU',
     cpuCores: cpus.length,
     cpuSpeed: cpus[0] ? `${(cpus[0].speed / 1000).toFixed(1)} GHz` : 'Unknown',
     cpuTemperature: getSystemTemperature(currentCpuUsage),
     
-    // GPU Information (cached)
+    // GPU Information
     gpuName: gpuInfo.name,
     gpuMemory: gpuInfo.memory,
     gpuTemperature: gpuInfo.temperature,
     gpuUsage: gpuInfo.usage,
     
-    // Memory Information (real-time)
+    // Memory Information
     memoryUsage: (usedMemory / totalMemory) * 100,
     totalMemory: (totalMemory / (1024 ** 3)).toFixed(1),
     freeMemory: (freeMemory / (1024 ** 3)).toFixed(1),
     usedMemory: (usedMemory / (1024 ** 3)).toFixed(1),
     
-    // Storage Information
-    storageUsage: storageInfo.usagePercentage,
-    storageTotalGB: storageInfo.totalGB,
-    storageFreeGB: storageInfo.freeGB,
-    storageUsedGB: storageInfo.usedGB,
+    // Storage Information (real data)
+    storageUsage: getDiskUsage().usagePercentage,
+    storageTotalGB: getDiskUsage().totalGB,
+    storageFreeGB: getDiskUsage().freeGB,
+    storageUsedGB: getDiskUsage().usedGB,
     
-    // Network Information (cached)
+    // Network Information
     networkSSID: networkInfo.ssid,
     networkSignal: networkInfo.signalStrength,
     networkType: networkInfo.networkType,
@@ -301,22 +285,23 @@ ipcMain.handle('get-system-info', async () => {
     downloadSpeed: networkInfo.downloadSpeed,
     uploadSpeed: networkInfo.uploadSpeed,
     
-    // System Information (lightweight)
+    // System Information
     platform: os.platform(),
     architecture: os.arch(),
     hostname: os.hostname(),
     uptime: formatUptime(os.uptime()),
     uptimeSeconds: os.uptime(),
     
-    // Legacy compatibility
+    // Legacy network info for compatibility
     networkName: networkInfo.isConnected ? networkInfo.ssid : 'Disconnected',
     networkStatus: networkInfo.isConnected ? 'Connected' : 'Disconnected',
-    networkInterfaces: Object.values(os.networkInterfaces()).flat().filter(iface => 
-      iface.family === 'IPv4' && !iface.internal
-    ),
+    networkInterfaces: networkInterfaces,
     
     // OS Information
     osType: os.type(),
-    osRelease: os.release()
+    osRelease: os.release(),
+    
+    // Load average (Unix-like systems)
+    loadAverage: os.loadavg()
   };
 });
