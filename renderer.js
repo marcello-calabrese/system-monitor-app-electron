@@ -360,6 +360,58 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   
+  // Add Malwarebytes launcher functionality
+  const launchMalwarebytesBtn = document.getElementById('launch-malwarebytes-btn');
+  if (launchMalwarebytesBtn) {
+    launchMalwarebytesBtn.addEventListener('click', async () => {
+      const button = document.getElementById('launch-malwarebytes-btn');
+      const buttonText = document.getElementById('launch-btn-text');
+      const statusElement = document.getElementById('malwarebytes-status');
+      
+      // Update UI to show loading state
+      button.disabled = true;
+      buttonText.textContent = 'Launching...';
+      statusElement.textContent = 'Starting Malwarebytes...';
+      statusElement.className = 'text-sm text-yellow-400';
+      
+      try {
+        const result = await window.electronAPI.launchMalwarebytes();
+        
+        if (result.success) {
+          // Success state
+          statusElement.textContent = 'Malwarebytes launched successfully!';
+          statusElement.className = 'text-sm text-green-400';
+          buttonText.textContent = 'Launch Malwarebytes';
+          
+          // Reset after 3 seconds
+          setTimeout(() => {
+            statusElement.textContent = 'Ready to launch';
+            statusElement.className = 'text-sm text-blue-400';
+            button.disabled = false;
+          }, 3000);
+        } else {
+          // Error state
+          statusElement.textContent = result.message;
+          statusElement.className = 'text-sm text-red-400';
+          buttonText.textContent = 'Launch Malwarebytes';
+          
+          // Reset after 5 seconds
+          setTimeout(() => {
+            statusElement.textContent = 'Ready to launch';
+            statusElement.className = 'text-sm text-blue-400';
+            button.disabled = false;
+          }, 5000);
+        }
+      } catch (error) {
+        // Error handling
+        statusElement.textContent = 'Failed to launch Malwarebytes';
+        statusElement.className = 'text-sm text-red-400';
+        buttonText.textContent = 'Launch Malwarebytes';
+        button.disabled = false;
+      }
+    });
+  }
+  
   // Initial load and start auto-refresh
   updateSystemInfo();
   startAutoRefresh();

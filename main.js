@@ -1,10 +1,51 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const os = require('os');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, exec, spawn } = require('child_process');
+const fs = require('fs');
 
 // Store previous CPU measurements for calculating usage
 let previousCpuInfo = null;
+
+// Function to launch Malwarebytes
+async function launchMalwarebytes() {
+  return new Promise((resolve, reject) => {
+    // Common Malwarebytes installation paths
+    const malwarebytesPath = [
+      'C:\\Program Files\\Malwarebytes\\Anti-Malware\\mbam.exe',
+      'C:\\Program Files (x86)\\Malwarebytes\\Anti-Malware\\mbam.exe',
+      'C:\\Program Files\\Malwarebytes\\Malwarebytes Anti-Malware\\mbam.exe',
+      'C:\\Program Files (x86)\\Malwarebytes\\Malwarebytes Anti-Malware\\mbam.exe'
+    ];
+
+    // Find the correct Malwarebytes path
+    let foundPath = null;
+    for (const path of malwarebytesPath) {
+      if (fs.existsSync(path)) {
+        foundPath = path;
+        break;
+      }
+    }
+
+    if (foundPath) {
+      // Launch Malwarebytes
+      spawn(foundPath, [], { detached: true, stdio: 'ignore' });
+      resolve({ success: true, message: 'Malwarebytes launched successfully' });
+    } else {
+      // Try to launch via Windows Start Menu (fallback)
+      exec('start "" "malwarebytes"', (error) => {
+        if (error) {
+          resolve({ 
+            success: false, 
+            message: 'Malwarebytes not found. Please install Malwarebytes Anti-Malware.' 
+          });
+        } else {
+          resolve({ success: true, message: 'Malwarebytes launched successfully' });
+        }
+      });
+    }
+  });
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -305,4 +346,13 @@ ipcMain.handle('get-system-info', async () => {
     // Load average (Unix-like systems)
     loadAverage: os.loadavg()
   };
+});
+
+// IPC handler for launching Malwarebytes
+ipcMain.handle('launch-malwarebytes', async () => {
+  try {
+    return await launchMalwarebytes();
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
 });
