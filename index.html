@@ -60,6 +60,9 @@
     .p-6 { padding: 1.5rem; }
     .px-4 { padding-left: 1rem; padding-right: 1rem; }
     .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
     .mb-2 { margin-bottom: 0.5rem; }
     .mb-3 { margin-bottom: 0.75rem; }
     .mb-4 { margin-bottom: 1rem; }
@@ -69,6 +72,7 @@
     .border { border-width: 1px; }
     .border-b { border-bottom: 1px solid #3a3a3a; }
     .border-r { border-right: 1px solid #3a3a3a; }
+    .rounded { border-radius: 0.25rem; }
     .rounded-full { border-radius: 50%; }
     .rounded-md { border-radius: 0.375rem; }
     .rounded-lg { border-radius: 0.5rem; }
@@ -131,6 +135,7 @@
     
     /* Interactive */
     .cursor-pointer { cursor: pointer; }
+    .whitespace-nowrap { white-space: nowrap; }
     .hover\:bg-dark-600:hover { background: #3a3a3a; }
     .hover\:bg-red-600:hover { background: #dc2626; }
     .hover\:text-white:hover { color: white; }
@@ -255,6 +260,27 @@
       border-color: #3a3a3a;
       background: #1f1f1f;
     }
+    
+    /* Name customization styles */
+    .hidden {
+      display: none;
+    }
+    
+    #name-input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.3);
+      outline: none;
+    }
+    
+    .focus\:ring-1:focus {
+      --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+      --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+      box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+    }
+    
+    .focus\:ring-blue-400:focus {
+      --tw-ring-color: rgba(96, 165, 250, 0.3);
+    }
   </style>
 </head>
 <body class="bg-dark-900 text-white h-screen flex flex-col">
@@ -324,7 +350,46 @@
       <!-- Welcome Section -->
       <div class="bg-dark-800 rounded-xl p-6 mb-6">
         <p class="text-gray-400 text-sm mb-2">Welcome back</p>
-        <h2 class="text-3xl font-bold mb-6">Marcello</h2>
+        <h2 class="text-3xl font-bold mb-6" id="user-display-name">User</h2>
+        
+        <!-- Name customization section (hidden by default) -->
+        <div id="name-setup" class="hidden mb-4 p-3 bg-dark-700 rounded-lg border border-dark-600">
+          <p class="text-xs text-gray-400 mb-2">Customize your name:</p>
+          <div class="flex gap-2 mb-2">
+            <input 
+              type="text" 
+              id="name-input" 
+              placeholder="Enter your name" 
+              class="flex-1 px-2 py-1.5 bg-dark-600 border border-dark-500 rounded text-white text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              maxlength="20"
+            >
+            <button 
+              id="save-name-btn" 
+              class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors whitespace-nowrap"
+            >
+              Save
+            </button>
+          </div>
+          <button 
+            id="cancel-name-btn" 
+            class="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+        
+        <!-- Edit name button -->
+        <div class="flex items-center justify-between mb-4">
+          <button 
+            id="edit-name-btn" 
+            class="text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1"
+          >
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            Edit name
+          </button>
+        </div>
         
         <div class="space-y-4">
           <div class="flex items-center gap-3">

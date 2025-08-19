@@ -1,5 +1,73 @@
 
 
+// Name customization functionality
+function initializeNameCustomization() {
+  const userDisplayName = document.getElementById('user-display-name');
+  const nameSetup = document.getElementById('name-setup');
+  const nameInput = document.getElementById('name-input');
+  const saveNameBtn = document.getElementById('save-name-btn');
+  const cancelNameBtn = document.getElementById('cancel-name-btn');
+  const editNameBtn = document.getElementById('edit-name-btn');
+
+  // Load saved name from localStorage
+  const savedName = localStorage.getItem('userDisplayName');
+  if (savedName) {
+    userDisplayName.textContent = savedName;
+  } else {
+    // If no name is saved, show setup on first launch
+    nameSetup.classList.remove('hidden');
+    editNameBtn.style.display = 'none';
+  }
+
+  // Edit name button click
+  editNameBtn.addEventListener('click', () => {
+    nameSetup.classList.remove('hidden');
+    nameInput.value = userDisplayName.textContent;
+    nameInput.focus();
+  });
+
+  // Save name functionality
+  function saveName() {
+    const newName = nameInput.value.trim();
+    if (newName && newName.length > 0) {
+      userDisplayName.textContent = newName;
+      localStorage.setItem('userDisplayName', newName);
+      nameSetup.classList.add('hidden');
+      editNameBtn.style.display = 'flex';
+      nameInput.value = '';
+    }
+  }
+
+  // Cancel editing functionality
+  function cancelEdit() {
+    nameSetup.classList.add('hidden');
+    nameInput.value = '';
+    if (savedName || localStorage.getItem('userDisplayName')) {
+      editNameBtn.style.display = 'flex';
+    }
+  }
+
+  // Save button click
+  saveNameBtn.addEventListener('click', saveName);
+
+  // Cancel button click
+  cancelNameBtn.addEventListener('click', cancelEdit);
+
+  // Enter key press in input
+  nameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      saveName();
+    }
+  });
+
+  // Escape key to cancel
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      cancelEdit();
+    }
+  });
+}
+
 // Auto-refresh state management
 let autoRefreshEnabled = true;
 let refreshInterval = null;
@@ -312,6 +380,9 @@ async function updateSystemInfo() {
 
 // Add some interactive effects
 document.addEventListener('DOMContentLoaded', function() {
+  // Initialize name customization
+  initializeNameCustomization();
+  
   // Set up window controls
   const minimizeBtn = document.getElementById('minimize-btn');
   const closeBtn = document.getElementById('close-btn');
