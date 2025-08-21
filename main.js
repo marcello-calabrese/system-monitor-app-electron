@@ -7,6 +7,24 @@ const fs = require('fs');
 // Store previous CPU measurements for calculating usage
 let previousCpuInfo = null;
 
+// Store performance history (last 60 data points = 60 seconds at 1Hz)
+const performanceHistory = {
+  cpu: [],
+  memory: [],
+  maxDataPoints: 60
+};
+
+// Function to add data point to history
+function addToHistory(type, value) {
+  const history = performanceHistory[type];
+  history.push(value);
+  
+  // Keep only last 60 data points
+  if (history.length > performanceHistory.maxDataPoints) {
+    history.shift();
+  }
+}
+
 // Function to launch Malwarebytes
 async function launchMalwarebytes() {
   return new Promise((resolve, reject) => {
@@ -51,6 +69,10 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1240,
     height: 800,
+    minWidth: 1200,    // Minimum window width
+    maxWidth: 1800,    // Maximum window width  
+    minHeight: 800,    // Minimum window height
+    maxHeight: 1200,   // Maximum window height
     frame: false, // Remove the default title bar
     icon: path.join(__dirname, 'icons', 'icon.ico'), // Custom app icon
     webPreferences: {
@@ -143,7 +165,129 @@ function getSystemTemperature(cpuUsage) {
   return Math.round(baseTemp + tempVariation + randomVariation);
 }
 
-// Function to get network information (optimized)
+// Function to get detailed CPU hardware information
+async function getDetailedCPUInfo() {
+  try {
+    const result = execSync('wmic cpu get Name,Manufacturer,MaxClockSpeed,NumberOfCores,NumberOfLogicalProcessors /format:list', 
+      { encoding: 'utf8', timeout: 5000 });
+    
+    const lines = result.split('\n').filter(line => line.trim() && line.includes('='));
+    const cpuInfo = {};
+    
+    lines.forEach(line => {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        cpuInfo[key.trim()] = value.trim();
+      }
+    });
+    
+    return {
+      name: cpuInfo.Name || 'Unknown',
+      manufacturer: cpuInfo.Manufacturer || 'Unknown',
+      cores: cpuInfo.NumberOfCores || 'Unknown',
+      logicalProcessors: cpuInfo.NumberOfLogicalProcessors || 'Unknown',
+      maxClockSpeed: cpuInfo.MaxClockSpeed ? `${cpuInfo.MaxClockSpeed} MHz` : 'Unknown',
+      architecture: 'x64',
+      l2Cache: 'Unknown',
+      l3Cache: 'Unknown'
+    };
+  } catch (error) {
+    console.error('Error getting detailed CPU info:', error);
+    return {
+      name: 'Unknown',
+      manufacturer: 'Unknown',
+      architecture: 'Unknown',
+      cores: 'Unknown',
+      logicalProcessors: 'Unknown',
+      maxClockSpeed: 'Unknown',
+      l2Cache: 'Unknown',
+      l3Cache: 'Unknown'
+    };
+  }
+}
+
+// Function to get detailed RAM information
+async function getDetailedRAMInfo() {
+  try {
+    const result = execSync('wmic memorychip get BankLabel,Capacity,Speed,MemoryType /format:list', 
+      { encoding: 'utf8', timeout: 5000 });
+    
+    const lines = result.split('\n').filter(line => line.trim() && line.includes('='));
+    const memoryData = {};
+    const memorySticks = [];
+    
+    let currentStick = {};
+    lines.forEach(line => {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        const cleanKey = key.trim();
+        const cleanValue = value.trim();
+        
+        if (cleanKey === 'BankLabel' && Object.keys(currentStick).length > 0) {
+          memorySticks.push(currentStick);
+          currentStick = {};
+        }
+        
+        currentStick[cleanKey] = cleanValue;
+      }
+    });
+    
+    if (Object.keys(currentStick).length > 0) {
+      memorySticks.push(currentStick);
+    }
+    
+    return memorySticks.map(stick => ({
+      bankLabel: stick.BankLabel || 'Unknown',
+      capacity: stick.Capacity ? `${Math.round(stick.Capacity / (1024**3))} GB` : 'Unknown',
+      speed: stick.Speed ? `${stick.Speed} MHz` : 'Unknown',
+      memoryType: getMemoryType(stick.MemoryType) || 'Unknown'
+    }));
+  } catch (error) {
+    console.error('Error getting detailed RAM info:', error);
+    return [];
+  }
+}
+
+// Function to convert memory type number to readable string
+function getMemoryType(typeNumber) {
+  const types = {
+    '20': 'DDR',
+    '21': 'DDR2', 
+    '24': 'DDR3',
+    '26': 'DDR4',
+    '34': 'DDR5'
+  };
+  return types[typeNumber] || `Type ${typeNumber}`;
+}
+
+// Function to get motherboard information
+async function getMotherboardInfo() {
+  try {
+    const result = execSync('wmic baseboard get Manufacturer,Product /format:list', 
+      { encoding: 'utf8', timeout: 5000 });
+    
+    const lines = result.split('\n').filter(line => line.trim() && line.includes('='));
+    const motherboardInfo = {};
+    
+    lines.forEach(line => {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        motherboardInfo[key.trim()] = value.trim();
+      }
+    });
+    
+    return {
+      manufacturer: motherboardInfo.Manufacturer || 'Unknown',
+      product: motherboardInfo.Product || 'Unknown'
+    };
+  } catch (error) {
+    console.error('Error getting motherboard info:', error);
+    return {
+      manufacturer: 'Unknown',
+      product: 'Unknown'
+    };
+  }
+}// Function to get network information (optimized)
 async function getNetworkInfo() {
   try {
     // Simplified network detection
@@ -281,8 +425,21 @@ ipcMain.handle('get-system-info', async () => {
   const network = os.networkInterfaces();
   const currentCpuUsage = getCpuUsage();
   
+  // Calculate percentages for history tracking
+  const cpuPercentage = currentCpuUsage;
+  const memoryPercentage = (usedMemory / totalMemory) * 100;
+  
+  // Add to performance history
+  addToHistory('cpu', cpuPercentage);
+  addToHistory('memory', memoryPercentage);
+  
   // Get GPU information
   const gpuInfo = await getGPUInfo();
+  
+  // Get detailed hardware information
+  const detailedCPU = await getDetailedCPUInfo();
+  const detailedRAM = await getDetailedRAMInfo();
+  const motherboardInfo = await getMotherboardInfo();
   
   // Get real network information
   const networkInfo = await getNetworkInfo();
@@ -307,10 +464,23 @@ ipcMain.handle('get-system-info', async () => {
     gpuUsage: gpuInfo.usage,
     
     // Memory Information
-    memoryUsage: (usedMemory / totalMemory) * 100,
+    memoryUsage: memoryPercentage,
     totalMemory: (totalMemory / (1024 ** 3)).toFixed(1),
     freeMemory: (freeMemory / (1024 ** 3)).toFixed(1),
     usedMemory: (usedMemory / (1024 ** 3)).toFixed(1),
+    
+    // Performance History (last 60 seconds)
+    performanceHistory: {
+      cpu: [...performanceHistory.cpu],
+      memory: [...performanceHistory.memory]
+    },
+    
+    // Detailed Hardware Information
+    detailedHardware: {
+      cpu: detailedCPU,
+      memory: detailedRAM,
+      motherboard: motherboardInfo
+    },
     
     // Storage Information (real data)
     storageUsage: getDiskUsage().usagePercentage,

@@ -1,5 +1,124 @@
 
 
+// Performance History Chart Functions
+function drawSparkline(canvasId, data, color, maxValue = 100) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  const { width, height } = canvas;
+  
+  // Clear canvas
+  ctx.clearRect(0, 0, width, height);
+  
+  if (data.length < 2) return;
+  
+  // Setup
+  const padding = 2;
+  const chartWidth = width - padding * 2;
+  const chartHeight = height - padding * 2;
+  
+  // Calculate points
+  const stepX = chartWidth / (data.length - 1);
+  const points = data.map((value, index) => ({
+    x: padding + index * stepX,
+    y: padding + chartHeight - (value / maxValue) * chartHeight
+  }));
+  
+  // Draw gradient fill
+  const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+  gradient.addColorStop(0, color + '40'); // 25% opacity
+  gradient.addColorStop(1, color + '10'); // 6% opacity
+  
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, height - padding);
+  points.forEach(point => ctx.lineTo(point.x, point.y));
+  ctx.lineTo(points[points.length - 1].x, height - padding);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Draw line
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  points.forEach(point => ctx.lineTo(point.x, point.y));
+  ctx.stroke();
+  
+  // Draw last point highlight
+  const lastPoint = points[points.length - 1];
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(lastPoint.x, lastPoint.y, 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// Update performance charts
+function updatePerformanceCharts(data) {
+  if (data.performanceHistory) {
+    // Update CPU history chart
+    drawSparkline('cpu-history-chart', data.performanceHistory.cpu, '#60a5fa');
+    
+    // Update Memory history chart  
+    drawSparkline('memory-history-chart', data.performanceHistory.memory, '#34d399');
+  }
+}
+
+// Update detailed hardware information
+function updateHardwareInfo(data) {
+  if (data.detailedHardware) {
+    const { cpu, memory, motherboard } = data.detailedHardware;
+    
+    // Update CPU details
+    if (cpu) {
+      document.getElementById('cpu-architecture').textContent = cpu.architecture;
+      document.getElementById('cpu-l2-cache').textContent = cpu.l2Cache;
+      document.getElementById('cpu-l3-cache').textContent = cpu.l3Cache;
+      document.getElementById('cpu-max-speed').textContent = cpu.maxClockSpeed;
+    }
+    
+    // Update memory details
+    if (memory && memory.length > 0) {
+      const memoryContainer = document.getElementById('memory-slots');
+      memoryContainer.innerHTML = '';
+      
+      memory.forEach((stick, index) => {
+        const memorySlot = document.createElement('div');
+        memorySlot.className = 'flex justify-between';
+        memorySlot.innerHTML = `
+          <span class="text-gray-400">Slot ${index + 1}:</span> 
+          <span>${stick.capacity} ${stick.speed} ${stick.memoryType}</span>
+        `;
+        memoryContainer.appendChild(memorySlot);
+      });
+      
+      // Add total memory info
+      if (memory.length > 1) {
+        const totalDiv = document.createElement('div');
+        totalDiv.className = 'flex justify-between border-t border-dark-600 pt-1 mt-1';
+        const totalCapacity = memory.reduce((sum, stick) => {
+          const capacity = parseInt(stick.capacity);
+          return sum + (isNaN(capacity) ? 0 : capacity);
+        }, 0);
+        totalDiv.innerHTML = `
+          <span class="text-gray-400">Total:</span> 
+          <span class="text-green-400">${totalCapacity} GB (${memory.length} sticks)</span>
+        `;
+        memoryContainer.appendChild(totalDiv);
+      }
+    }
+    
+    // Update motherboard details
+    if (motherboard) {
+      document.getElementById('mb-manufacturer').textContent = motherboard.manufacturer;
+      document.getElementById('mb-product').textContent = motherboard.product;
+    }
+  }
+}
+
 // Name customization functionality
 function initializeNameCustomization() {
   const userDisplayName = document.getElementById('user-display-name');
@@ -369,6 +488,12 @@ async function updateSystemInfo() {
       // You can add network status updates here
     }
     
+    // Update performance history charts
+    updatePerformanceCharts(data);
+    
+    // Update detailed hardware information
+    updateHardwareInfo(data);
+
   } catch (error) {
     console.error('Error fetching system info:', error);
     document.getElementById('cpu-usage').textContent = 'Error';

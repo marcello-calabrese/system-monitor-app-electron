@@ -281,6 +281,15 @@
     .focus\:ring-blue-400:focus {
       --tw-ring-color: rgba(96, 165, 250, 0.3);
     }
+    
+    /* Performance History Canvas Styling */
+    canvas {
+      border-radius: 0.25rem;
+    }
+    
+    .h-8 {
+      height: 2rem;
+    }
   </style>
 </head>
 <body class="bg-dark-900 text-white h-screen flex flex-col">
@@ -500,6 +509,15 @@
           </div>
 
           <div class="space-y-3">
+            <!-- Performance History Chart -->
+            <div class="mb-3">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-gray-400">60s History</span>
+                <span class="text-xs text-gray-500">Real-time</span>
+              </div>
+              <canvas id="cpu-history-chart" width="200" height="30" class="w-full h-8 bg-dark-600 rounded"></canvas>
+            </div>
+            
             <div class="flex justify-between items-center">
               <span class="text-sm text-gray-400">Utilization</span>
               <span id="cpu-usage" class="text-sm font-medium text-blue-400">0%</span>
@@ -546,6 +564,15 @@
           </div>
 
           <div class="space-y-3">
+            <!-- Performance History Chart -->
+            <div class="mb-3">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-gray-400">60s History</span>
+                <span class="text-xs text-gray-500">Real-time</span>
+              </div>
+              <canvas id="memory-history-chart" width="200" height="30" class="w-full h-8 bg-dark-600 rounded"></canvas>
+            </div>
+            
             <div class="flex justify-between items-center">
               <span class="text-sm text-gray-400">Utilization</span>
               <span id="memory-usage" class="text-sm font-medium text-green-400">Loading...</span>
@@ -709,6 +736,82 @@
             </svg>
             <span id="launch-btn-text">Launch Malwarebytes</span>
           </button>
+        </div>
+
+        <!-- Hardware Information Panel -->
+        <div class="bg-dark-800 rounded-xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-lg font-semibold">Hardware Details</h3>
+              <p class="text-sm text-gray-400">Detailed system specifications</p>
+            </div>
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+            </svg>
+          </div>
+          
+          <div class="space-y-3">
+            <!-- CPU Details -->
+            <div class="bg-dark-700 rounded-lg p-3">
+              <h4 class="font-medium text-sm mb-2 text-blue-400">Processor Details</h4>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div><span class="text-gray-400">Architecture:</span> <span id="cpu-architecture">Loading...</span></div>
+                <div><span class="text-gray-400">L2 Cache:</span> <span id="cpu-l2-cache">Loading...</span></div>
+                <div><span class="text-gray-400">L3 Cache:</span> <span id="cpu-l3-cache">Loading...</span></div>
+                <div><span class="text-gray-400">Max Speed:</span> <span id="cpu-max-speed">Loading...</span></div>
+              </div>
+            </div>
+            
+            <!-- Memory Details -->
+            <div class="bg-dark-700 rounded-lg p-3">
+              <h4 class="font-medium text-sm mb-2 text-green-400">Memory Details</h4>
+              <div id="memory-slots" class="space-y-1 text-xs">
+                <div>Loading memory information...</div>
+              </div>
+            </div>
+            
+            <!-- Motherboard Details -->
+            <div class="bg-dark-700 rounded-lg p-3">
+              <h4 class="font-medium text-sm mb-2 text-purple-400">Motherboard</h4>
+              <div class="grid grid-cols-1 gap-1 text-xs">
+                <div><span class="text-gray-400">Manufacturer:</span> <span id="mb-manufacturer">Loading...</span></div>
+                <div><span class="text-gray-400">Model:</span> <span id="mb-product">Loading...</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Placeholder for grid layout balance -->
+        <div class="bg-dark-800 rounded-xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-lg font-semibold">System Health</h3>
+              <p class="text-sm text-gray-400">Overall system status</p>
+            </div>
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+          </div>
+          
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+            <span class="text-sm text-green-400">System Running Optimally</span>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Temperature:</span>
+              <span class="text-green-400">Normal</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Performance:</span>
+              <span class="text-green-400">Excellent</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Uptime:</span>
+              <span class="text-green-400">Stable</span>
+            </div>
+          </div>
         </div>
       </div>
     </main>
